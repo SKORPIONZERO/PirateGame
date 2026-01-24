@@ -4,7 +4,8 @@
 # written by the AQA Programmer Team
 # developed in a Python 3 environment
 # Use pip install colorama
-from colorama import Fore, Style, init
+import random
+from colorama import init
 
 init()
 
@@ -40,6 +41,7 @@ class PirateRecord:
     self.NumberOfCoinsFound = 0
     self.NumOfDigs = 0
     self.UsedDynamite = False
+    self.NumOfActions = 0
 
 def ResetMapSize(MapSize):
   MapSize.Rows = MAX_ROWS
@@ -361,8 +363,28 @@ def PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate):
   DisplayResults(Pirate)
   return TreasureDestroyed
 
+def MoveTreasure(Map, MapSize, HiddenMap):
+  AvailableTiles = []
+  for Row in range(MapSize.Rows):
+    for Column in range(MapSize.Columns):
+      if Map[Row][Column] == SAND:
+        AvailableTiles.append([Row, Column])
+      if HiddenMap[Row][Column] == TREASURE:
+        TreasureRow = Row
+        TreasureColumn = Column
+  NewTile = random.choice(AvailableTiles)
+  # Setting previous tile to sand
+  Map[TreasureRow][TreasureColumn] = SAND
+  HiddenMap[TreasureRow][TreasureColumn] = SAND
+  # Putting tresure into new place
+  HiddenMap[NewTile[0]][NewTile[1]] = TREASURE
+
+
 def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     TreasureDestroyed = False
+    if Pirate.NumOfActions % 8 == 0 and Pirate.NumOfActions > 0:
+      MoveTreasure(Map, MapSize, HiddenMap)
+      print("The tresure has moved!")
     Answer = input("Pirate to walk (W), dig (D) or use dynamite (B), to finish game press Enter: ")
     while not (Answer in ["W", "D", "B", PRESSED_ENTER]):
       Answer = input("Pirate to walk (W), dig (D) or use dynamite (B), to finish game press Enter: ")
@@ -375,6 +397,8 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
         TreasureDestroyed = PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate)
       else:
         print(f"The pirate has already used dynamite!")
+        return Answer
+    Pirate.NumOfActions += 1
     if TreasureDestroyed:
       return PRESSED_ENTER
     return Answer
@@ -397,6 +421,7 @@ def TreasureIsland():
   Answer = BLANK
   while Answer != PRESSED_ENTER and Pirate.Score >= 0 and not Pirate.TreasureFound:
     Answer = GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer)
+  print(f"\nFinal results:")
   DisplayResults(Pirate)
 
 if __name__ == "__main__":
