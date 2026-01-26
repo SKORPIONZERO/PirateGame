@@ -35,13 +35,14 @@ class PirateRecord:
   def __init__(self):
     self.Row = 0
     self.Column = 0
-    self.Score = 100
+    self.Score = 200
     self.DigTime = 0.0
     self.TreasureFound = False
     self.NumberOfCoinsFound = 0
     self.NumOfDigs = 0
     self.UsedDynamite = False
     self.NumOfActions = 0
+    self.Drown = False
 
 def ResetMapSize(MapSize):
   MapSize.Rows = MAX_ROWS
@@ -57,11 +58,14 @@ def ResetMaps(Map, HiddenMap):
 def ResetPirateRecord(Pirate):
   Pirate.Row = 0
   Pirate.Column = 0
-  Pirate.Score = 100
+  Pirate.Score = 200
   Pirate.DigTime = 0.0
   Pirate.TreasureFound = False
   Pirate.NumberOfCoinsFound = 0
   Pirate.NumofDigs = 0
+  Pirate.UsedDynamite = False
+  Pirate.NumOfActions = 0
+  Pirate.Drown = False
 
 def GenerateMap(Map, MapSize):
   FileIn = open("MapData.txt", 'r')
@@ -179,8 +183,6 @@ def FindLandingPlace(Map, MapSize, Pirate):
         break
   FoundPirate(Map, MapSize, Steps)
 
-
-
 def CheckDistance(Distance):
   ValidDistance = True
   NumberOfSquares = -1
@@ -225,35 +227,35 @@ def CheckPath(Map, StartRow, StartColumn, EndRow, EndColumn, Direction, O_not_ob
   ObstacleFound = False
   if Direction == "N":
     for Row in range(EndRow, StartRow):
-      if Map[Row][StartColumn] != SAND and (Map[Row][StartColumn] == DUG_HOLE and not O_not_obstacle):
+      if Map[Row][StartColumn] not in [SAND,DUG_HOLE] or (Map[Row][StartColumn] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "NE":
     for i in range(1, StartRow - EndRow + 1):
-      if Map[StartRow - i][StartColumn + i] != SAND and (Map[StartRow - i][StartColumn + i] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow - i][StartColumn + i] not in [SAND,DUG_HOLE] or (Map[StartRow - i][StartColumn + i] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "E":
     for Column in range(StartColumn + 1, EndColumn + 1):
-      if Map[StartRow][Column] != SAND and (Map[StartRow][Column] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow][Column] not in [SAND,DUG_HOLE] or (Map[StartRow][Column] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "SE":
     for i in range(1, EndRow - StartRow + 1):
-      if Map[StartRow + i][StartColumn + i] != SAND and (Map[StartRow + i][StartColumn + i] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow + i][StartColumn + i] not in [SAND,DUG_HOLE] or (Map[StartRow + i][StartColumn + i] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "S":
     for Row in range(StartRow + 1, EndRow + 1):
-      if Map[Row][StartColumn] != SAND and (Map[Row][StartColumn] == DUG_HOLE and not O_not_obstacle):
+      if Map[Row][StartColumn] not in [SAND,DUG_HOLE] or (Map[Row][StartColumn] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "SW":
     for i in range(1, EndRow - StartRow + 1):
-      if Map[StartRow + i][StartColumn - i] != SAND and (Map[StartRow + i][StartColumn - i] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow + i][StartColumn - i] not in [SAND,DUG_HOLE] or (Map[StartRow + i][StartColumn - i] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "W":
     for Column in range(EndColumn, StartColumn):
-      if Map[StartRow][Column] != SAND and (Map[StartRow][Column] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow][Column] not in [SAND,DUG_HOLE] or (Map[StartRow][Column] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   elif Direction == "NW":
     for i in range(1, StartRow - EndRow + 1):
-      if Map[StartRow - i][StartColumn - i] != SAND and (Map[StartRow - i][StartColumn - i] == DUG_HOLE and not O_not_obstacle):
+      if Map[StartRow - i][StartColumn - i] not in [SAND,DUG_HOLE] or (Map[StartRow - i][StartColumn - i] == DUG_HOLE and not O_not_obstacle):
         ObstacleFound = True
   return ObstacleFound
 
@@ -285,7 +287,7 @@ def PirateWalks(Map, MapSize, HiddenMap, Pirate):
       O_not_obstacle = True
       if WalkData[0] == "1":
         ValidDistance = False
-        print("Need to get out of the entire dynamite hole!")
+        print("Need to get out of the entire hole!")
     Direction = WalkData[1:]
     ValidDirection, Row, Column = CheckDirection(Direction, Row, Column, NumberOfSquares)
     if Row >= MapSize.Rows or Column >= MapSize.Columns or Row < 0 or Column < 0:
@@ -378,13 +380,30 @@ def MoveTreasure(Map, MapSize, HiddenMap):
   HiddenMap[TreasureRow][TreasureColumn] = SAND
   # Putting tresure into new place
   HiddenMap[NewTile[0]][NewTile[1]] = TREASURE
+  return [NewTile[0],NewTile[1]]
 
+def MoveWater(Map, MapSize, Pirate):
+  TilesTurnToWater = []
+  Row = 0
+  while Row < MapSize.Rows:
+    Column = 0
+    while Column < MapSize.Columns:
+      if Map[Row][Column] == WATER:
+        for i in [-1, 0, 1]:
+          for j in [-1, 0, 1]:
+            if not (Row+i < 0 or Row+i>=MapSize.Rows) and not (Column+j < 0 or Column+j>=MapSize.Columns):
+              if Row+i == Pirate.Row and Column+j == Pirate.Column:
+                Pirate.Drown = True
+              TilesTurnToWater.append([Row+i,Column+j])
+      Column += 1
+    Row += 1
+    print(Row)
+  for n in TilesTurnToWater:
+    Map[n[0]][n[1]] = WATER
+  DisplayMap(Map, MapSize)
 
 def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     TreasureDestroyed = False
-    if Pirate.NumOfActions % 8 == 0 and Pirate.NumOfActions > 0:
-      MoveTreasure(Map, MapSize, HiddenMap)
-      print("The tresure has moved!")
     Answer = input("Pirate to walk (W), dig (D) or use dynamite (B), to finish game press Enter: ")
     while not (Answer in ["W", "D", "B", PRESSED_ENTER]):
       Answer = input("Pirate to walk (W), dig (D) or use dynamite (B), to finish game press Enter: ")
@@ -401,6 +420,16 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     Pirate.NumOfActions += 1
     if TreasureDestroyed:
       return PRESSED_ENTER
+    if Pirate.NumOfActions % 8 == 0 and Pirate.NumOfActions > 0:
+      TreasreTile = MoveTreasure(Map, MapSize, HiddenMap)
+      print("The tresure has moved!")
+      print(f"New treasure location is {TreasreTile}")
+    if Pirate.NumOfActions % 10 == 0 and Pirate.NumOfActions > 0:
+      MoveWater(Map, MapSize, Pirate)
+      print("The water level is rising!")
+      if Pirate.Drown:
+        print(f"\033[31mThe pirate has drown!\033[0m")
+        return PRESSED_ENTER
     return Answer
 
 def DisplayResults(Pirate):
