@@ -458,4 +458,4 @@ if __name__ == "__main__":
   HiddenMap = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   TreasureIsland()
   ResetMaps(Map, HiddenMap)
-  input("Press Enter to finish")
+  input("\nPress Enter to finish")
