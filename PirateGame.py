@@ -35,7 +35,7 @@ class PirateRecord:
   def __init__(self):
     self.Row = 0
     self.Column = 0
-    self.Score = 200
+    self.Score = 300
     self.DigTime = 0.0
     self.TreasureFound = False
     self.NumberOfCoinsFound = 0
@@ -43,7 +43,7 @@ class PirateRecord:
     self.UsedDynamite = False
     self.NumOfActions = 0
     self.Drown = False
-    self.NumberOfCoconuts = 0
+    self.NumOfCoconuts = 0
 
 def ResetMapSize(MapSize):
   MapSize.Rows = MAX_ROWS
@@ -67,7 +67,7 @@ def ResetPirateRecord(Pirate):
   Pirate.UsedDynamite = False
   Pirate.NumOfActions = 0
   Pirate.Drown = False
-  Pirate.NumberOfCoconuts = 0
+  Pirate.NumOfCoconuts = 0
 
 def GenerateMap(Map, MapSize):
   FileIn = open("MapData.txt", 'r')
@@ -190,11 +190,11 @@ def CheckDistance(Distance):
   NumberOfSquares = -1
   try:
     NumberOfSquares = int(Distance)
-    if NumberOfSquares < 1 or NumberOfSquares > 9:
-      print("Distance must be between 1 and 9")
+    if NumberOfSquares < 1 or NumberOfSquares > 20:
+      print("Distance must be between 1 and 20")
       ValidDistance = False
   except:
-    print("Not a valid integer between 1 and 9")
+    print("Not a valid integer between 1 and 20")
     ValidDistance = False
   return ValidDistance, NumberOfSquares
 
@@ -277,20 +277,27 @@ def PirateWalks(Map, MapSize, HiddenMap, Pirate):
   SurroundedByObstacles = True
   O_not_obstacle = False
   while ObstacleInPath or not ValidDistance or not ValidDirection:
-    WalkData = input("Enter length (1 to 9) and direction (N, NE, E, SE, S, SW, W, NW): ")
+    WalkData = input("Enter length (1 to 20) and direction (N, NE, E, SE, S, SW, W, NW): ")
+    Distance = 0
+    Direction = BLANK
+    for k in range(len(WalkData)):
+      if WalkData[0:k+1].isdigit():
+        Distance = WalkData[0:k+1]
+    for n in range(len(WalkData)):
+      if WalkData[-1:-n-2:-1].isalpha():
+        Direction = WalkData[-n-1:]
     Row = Pirate.Row
     Column = Pirate.Column
     for i in [-1, 0, 1]:
       for j in [-1, 0, 1]:
         if Map[Pirate.Row+i][Pirate.Column+j] == SAND:
           SurroundedByObstacles = False
-    ValidDistance, NumberOfSquares = CheckDistance(WalkData[0])
+    ValidDistance, NumberOfSquares = CheckDistance(Distance)
     if SurroundedByObstacles:
       O_not_obstacle = True
-      if WalkData[0] == "1":
+      if Distance == "1":
         ValidDistance = False
         print("Need to get out of the entire hole!")
-    Direction = WalkData[1:]
     ValidDirection, Row, Column = CheckDirection(Direction, Row, Column, NumberOfSquares)
     if Row >= MapSize.Rows or Column >= MapSize.Columns or Row < 0 or Column < 0:
       ValidDirection = False
@@ -301,10 +308,10 @@ def PirateWalks(Map, MapSize, HiddenMap, Pirate):
         print("Pirate can't walk this way as there is an obstacle in the way")
   Move(Map, MapSize, Pirate, Row, Column, WalkData[0])
 
-def DisplayFind(Map, Pirate, ItemFound):
+def DisplayFind(Pirate, ItemFound):
   if ItemFound == COCONUT:
     Item = "Coconut"
-    Pirate.NumberOfCoconuts += 1
+    Pirate.NumOfCoconuts += 1
   elif ItemFound == TREASURE:
     Item = "\033[32mTreasure chest\033[0m"
     Pirate.TreasureFound = True
@@ -321,7 +328,7 @@ def DisplayFind(Map, Pirate, ItemFound):
 
 def PirateDigs(Map, HiddenMap, Pirate):
   if HiddenMap[Pirate.Row][Pirate.Column] not in [SAND, DUG_HOLE]:
-    DisplayFind(Map, Pirate, HiddenMap[Pirate.Row][Pirate.Column])
+    DisplayFind(Pirate, HiddenMap[Pirate.Row][Pirate.Column])
   else:
     if HiddenMap[Pirate.Row][Pirate.Column] == DUG_HOLE:
       print("You've already dug here!")
@@ -347,7 +354,7 @@ def PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate):
             print(f"\033[31mTreasure was destroyed at {Pirate.Row+i+1},{Pirate.Column+j+1}\033[0m")
             TreasureDestroyed = True
             break
-          DisplayFind(Map, Pirate, HiddenMap[Pirate.Row+i][Pirate.Column+j])
+          DisplayFind(Pirate, HiddenMap[Pirate.Row+i][Pirate.Column+j])
           HiddenMap[Pirate.Row+i][Pirate.Column+j] = SAND
         else:
           print(f"Noting found at {Pirate.Row+i},{Pirate.Column+j}")
@@ -402,14 +409,33 @@ def MoveWater(Map, MapSize, Pirate):
   DisplayMap(Map, MapSize)
 
 def OpenInventory(Pirate):
-  print(f"Inventory")
+  print(f"Inventory: Number of coconuts: {Pirate.NumOfCoconuts}")
+  Answer = BLANK
+  while not (Answer in ["C", "Q"]): 
+    Answer = input("Press to eat a coconut (C), to close inventory (Q): ")
+    match(Answer):
+      case "C":
+        if Pirate.NumOfCoconuts != 0:
+          Pirate.NumOfCoconuts -= 1
+          Pirate.Score += 20
+          print(f"You ate a coconut and restored 20 score points")
+          print(f"New pirate score is: {Pirate.Score}")
+          Answer = BLANK
+          continue
+        else:
+          print("You haven't found any coconuts!")
+          Answer = BLANK
+          continue
+      case "Q":
+        return
+      case _:
+        continue
   
 def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     TreasureDestroyed = False
-    Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory(I), to finish game press Enter: ")
-    while not (Answer in ["W", "D", "B", PRESSED_ENTER]):
-      print(f"Pirates Score: {Pirate.Score}")
-      Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory(I), to finish game press Enter: ")
+    Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory (I), to finish game press Enter: ")
+    while not (Answer in ["W", "D", "B","I", PRESSED_ENTER]):
+      Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory (I), to finish game press Enter: ")
     match(Answer):
       case "W":
         PirateWalks(Map, MapSize, HiddenMap, Pirate)
@@ -423,6 +449,9 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
           return Answer
       case "I":
         OpenInventory(Pirate)
+      case _:
+        pass
+    print(f"Pirates Score: {Pirate.Score}")
     Pirate.NumOfActions += 1
     if TreasureDestroyed:
       return PRESSED_ENTER
@@ -444,6 +473,45 @@ def DisplayResults(Pirate):
   print(f"{Pirate.DigTime} hours spent digging")
   print(f"The score is {Pirate.Score}")
 
+def DisplayMissing(MapSize, HiddenMap):
+  Row = 0
+  MissingCoconuts = 0
+  MissingCoins = 0
+  MissingTreasure = False
+  FinalStatement = ""
+  while Row < MapSize.Rows:
+    Column = 0
+    while Column < MapSize.Columns:
+      if HiddenMap[Row][Column] != SAND:
+        if HiddenMap[Row][Column] == COCONUT:
+          MissingCoconuts += 1
+        if HiddenMap[Row][Column] == GOLD_COIN:
+          MissingCoins += 1
+        if HiddenMap[Row][Column] == TREASURE:
+          MissingTreasure = True
+      Column += 1
+    Row += 1
+  if MissingCoconuts != 0:
+    FinalStatement += f"{MissingCoconuts} coconuts"
+  if len(FinalStatement) != 0:
+    FinalStatement += ", "
+  if MissingCoins != 0:
+    FinalStatement += f"{MissingCoins} coins"
+  if MissingTreasure == True:
+    if len(FinalStatement) != 0:
+      FinalStatement += " and the treasure chest were left behind."
+    else:
+      FinalStatement += "treasure chest was left behind."
+  else:
+    if len(FinalStatement) != 0:
+      if (MissingCoconuts == 0 and MissingCoins == 1) or (MissingCoconuts == 1 and MissingCoins == 0):
+        FinalStatement += " was left behind."
+      else:
+        FinalStatement += " were left behind."
+    else:
+      FinalStatement += "Nothing was left behind)"
+  print(FinalStatement)
+
 def TreasureIsland():
   MapSize = MapSizeRecord()
   Pirate = PirateRecord()
@@ -458,6 +526,7 @@ def TreasureIsland():
     Answer = GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer)
   print(f"\nFinal results:")
   DisplayResults(Pirate)
+  DisplayMissing(MapSize, HiddenMap)
 
 if __name__ == "__main__":
   Map = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
