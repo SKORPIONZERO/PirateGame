@@ -326,7 +326,13 @@ def DisplayFind(Pirate, ItemFound):
     Item = "Unidentified item"
   print(f"Found {Item}")
 
+def OpenMapPart():
+  return
+
 def PirateDigs(Map, HiddenMap, Pirate):
+  RandomValue = random.randint(0,9)
+  if RandomValue == 0:
+    OpenMapPart()
   if HiddenMap[Pirate.Row][Pirate.Column] not in [SAND, DUG_HOLE]:
     DisplayFind(Pirate, HiddenMap[Pirate.Row][Pirate.Column])
   else:
