@@ -5,6 +5,7 @@
 # developed in a Python 3 environment
 # Use pip install colorama
 import random
+import time
 from colorama import init
 
 init()
@@ -310,14 +311,14 @@ def PirateWalks(Map, MapSize, HiddenMap, Pirate):
 
 def DisplayFind(Pirate, ItemFound):
   if ItemFound == COCONUT:
-    Item = "Coconut"
+    Item = "\033[32mCoconut\033[0m"
     Pirate.NumOfCoconuts += 1
   elif ItemFound == TREASURE:
     Item = "\033[32mTreasure chest\033[0m"
     Pirate.TreasureFound = True
     Pirate.Score += 200
   elif ItemFound == GOLD_COIN:
-    Item = "Gold coin"
+    Item = "\033[32mGold coin\033[0m"
     Pirate.NumberOfCoinsFound += 1
     print("The treasure must be nearby")
   elif ItemFound == DUG_HOLE:
@@ -326,14 +327,49 @@ def DisplayFind(Pirate, ItemFound):
     Item = "Unidentified item"
   print(f"Found {Item}")
 
-def OpenMapPart():
-  return
+def OpenMapPart(Map, MapSize, HiddenMap):
+  MapBuffer = []
+  PossibleTiles = []
+  TilesChanged = []
+  Row = 0
+  for Row in range(MapSize.Rows):
+    Column = 0
+    for Column in range(MapSize.Columns):
+      if HiddenMap[Row][Column] != SAND and Map[Row][Column] != WATER:
+        for i in [-1, 0, 1]:
+          for j in [-1, 0, 1]:
+            if Map[Row+i][Column+j] != WATER:
+              PossibleTiles.append([Row+i, Column+j])
+  TileChosen = random.choice(PossibleTiles)
+  RandomRow = TileChosen[0]
+  RandomColumn = TileChosen[1]
+  for row in [-1, 0, 1]:
+    for column in [-1, 0, 1]:
+      MapBuffer.append([RandomRow+row, RandomColumn+column, Map[RandomRow+row][RandomColumn+column]])
+  for n in range(len(MapBuffer)):
+    if HiddenMap[MapBuffer[n][0]][MapBuffer[n][1]] != SAND and Map[MapBuffer[n][0]][MapBuffer[n][1]] != WATER:
+      MapBuffer[n][2] = HiddenMap[MapBuffer[n][0]][MapBuffer[n][1]]
+      TilesChanged.append([MapBuffer[n][0],MapBuffer[n][1]])
+    Map[MapBuffer[n][0]][MapBuffer[n][1]] = "∎"
+  print("\033[32mYou've found a part of the map!\033[0m")
+  DisplayMap(Map, MapSize)
+  for k in range(len(MapBuffer)):
+    Map[MapBuffer[k][0]][MapBuffer[k][1]] = MapBuffer[k][2]
+  time.sleep(2)
+  print("\033[32mMap is being scanned...\033[0m")
+  DisplayMap(Map, MapSize)
+  time.sleep(2)
+  for h in range(len(TilesChanged)):
+    print(f"Tile with an item: {TilesChanged[h][0]},{TilesChanged[h][1]}")
+    Map[TilesChanged[h][0]][TilesChanged[h][1]] = SAND
+  DisplayMap(Map, MapSize)
 
-def PirateDigs(Map, HiddenMap, Pirate):
+def PirateDigs(Map, MapSize, HiddenMap, Pirate):
   RandomValue = random.randint(0,9)
-  if RandomValue == 0:
-    OpenMapPart()
+  if RandomValue in [0,1]:
+    OpenMapPart(Map, MapSize, HiddenMap)
   if HiddenMap[Pirate.Row][Pirate.Column] not in [SAND, DUG_HOLE]:
+    HiddenMap[Pirate.Row][Pirate.Column] == SAND
     DisplayFind(Pirate, HiddenMap[Pirate.Row][Pirate.Column])
   else:
     if HiddenMap[Pirate.Row][Pirate.Column] == DUG_HOLE:
@@ -378,6 +414,9 @@ def PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate):
   return TreasureDestroyed
 
 def MoveTreasure(Map, MapSize, HiddenMap):
+  #Base treasure location should be located at 0s in case if pirate digs out the chest on the 8th action
+  TreasureRow = 0
+  TreasureColumn = 0
   AvailableTiles = []
   for Row in range(MapSize.Rows):
     for Column in range(MapSize.Columns):
@@ -409,7 +448,6 @@ def MoveWater(Map, MapSize, Pirate):
               TilesTurnToWater.append([Row+i,Column+j])
       Column += 1
     Row += 1
-    print(Row)
   for n in TilesTurnToWater:
     Map[n[0]][n[1]] = WATER
   DisplayMap(Map, MapSize)
@@ -425,7 +463,7 @@ def OpenInventory(Pirate):
           Pirate.NumOfCoconuts -= 1
           Pirate.Score += 20
           print(f"You ate a coconut and restored 20 score points")
-          print(f"New pirate score is: {Pirate.Score}")
+          print(f"The score is: {Pirate.Score}")
           Answer = BLANK
           continue
         else:
@@ -441,10 +479,11 @@ def OpenInventory(Pirate):
           for row in [-1,1]:
             for column in [-1, 1]:
               if Map[Pirate.Row + row][Pirate.Column + column] == HUT:
-                print("\nYou successfully saved a coconut next to the corner of the hut to relax after working!")
+                print("\033[32mYou successfully saved a coconut next to the corner of the hut to relax after working!\033[0m")
+                print(f"The score is {Pirate.Score}")
                 CoconutDroppedSuccessfuly = True
           if CoconutDroppedSuccessfuly == False:
-            print("\nYou dropped a coconut in the incorrect spot")
+            print("\033[31mYou dropped a coconut in the incorrect spot and haven't got any benefits!\033[0m")
             Map[Pirate.Row][Pirate.Column] = COCONUT
         else:
           print("You haven't found any coconuts!")
@@ -462,7 +501,7 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
       case "W":
         PirateWalks(Map, MapSize, HiddenMap, Pirate)
       case "D":
-        PirateDigs(Map, HiddenMap, Pirate)
+        PirateDigs(Map, MapSize, HiddenMap, Pirate)
       case "B":
         if Pirate.UsedDynamite == False:
           TreasureDestroyed = PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate)
@@ -477,9 +516,8 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     if TreasureDestroyed:
       return PRESSED_ENTER
     if Pirate.NumOfActions % 8 == 0 and Pirate.NumOfActions > 0:
-      TreasreTile = MoveTreasure(Map, MapSize, HiddenMap)
+      MoveTreasure(Map, MapSize, HiddenMap)
       print("The tresure has moved!")
-      print(f"New treasure location is {TreasreTile}")
     if Pirate.NumOfActions % 10 == 0 and Pirate.NumOfActions > 0:
       MoveWater(Map, MapSize, Pirate)
       print("The water level is rising!")
