@@ -412,7 +412,7 @@ def OpenInventory(Pirate):
   print(f"Inventory: Number of coconuts: {Pirate.NumOfCoconuts}")
   Answer = BLANK
   while not (Answer in ["C", "Q"]): 
-    Answer = input("Press to eat a coconut (C), to close inventory (Q): ")
+    Answer = input("Press to eat a coconut (C), to drop a coconut(D), to close inventory (Q): ")
     match(Answer):
       case "C":
         if Pirate.NumOfCoconuts != 0:
@@ -428,6 +428,22 @@ def OpenInventory(Pirate):
           continue
       case "Q":
         return
+      case "D":
+        CoconutDroppedSuccessfuly = False
+        if Pirate.NumOfCoconuts != 0:
+          Pirate.NumOfCoconuts -= 1
+          for row in [-1,1]:
+            for column in [-1, 1]:
+              if Map[Pirate.Row + row][Pirate.Column + column] == HUT:
+                print("\nYou successfully saved a coconut next to the corner of the hut to relax after working!")
+                CoconutDroppedSuccessfuly = True
+          if CoconutDroppedSuccessfuly == False:
+            print("\nYou dropped a coconut in the incorrect spot")
+            Map[Pirate.Row][Pirate.Column] = COCONUT
+        else:
+          print("You haven't found any coconuts!")
+          Answer = BLANK
+          continue
       case _:
         continue
   
@@ -451,7 +467,6 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
         OpenInventory(Pirate)
       case _:
         pass
-    print(f"Pirates Score: {Pirate.Score}")
     Pirate.NumOfActions += 1
     if TreasureDestroyed:
       return PRESSED_ENTER
