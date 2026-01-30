@@ -6,6 +6,7 @@
 # Use pip install colorama
 import random
 import time
+import math
 from colorama import init
 
 init()
@@ -38,13 +39,14 @@ class PirateRecord:
     self.Column = 0
     self.Score = 300
     self.DigTime = 0.0
-    self.TreasureFound = False
-    self.NumberOfCoinsFound = 0
     self.NumOfDigs = 0
-    self.UsedDynamite = False
     self.NumOfActions = 0
-    self.Drown = False
     self.NumOfCoconuts = 0
+    self.NumberOfCoinsFound = 0
+    self.NumOfScannerUsesLeft = 5
+    self.TreasureFound = False
+    self.UsedDynamite = False
+    self.Drown = False
 
 def ResetMapSize(MapSize):
   MapSize.Rows = MAX_ROWS
@@ -62,13 +64,14 @@ def ResetPirateRecord(Pirate):
   Pirate.Column = 0
   Pirate.Score = 300
   Pirate.DigTime = 0.0
-  Pirate.TreasureFound = False
-  Pirate.NumberOfCoinsFound = 0
   Pirate.NumofDigs = 0
-  Pirate.UsedDynamite = False
   Pirate.NumOfActions = 0
-  Pirate.Drown = False
   Pirate.NumOfCoconuts = 0
+  Pirate.NumberOfCoinsFound = 0
+  Pirate.NumOfScannerUsesLeft = 5
+  Pirate.TreasureFound = False
+  Pirate.UsedDynamite = False
+  Pirate.Drown = False
 
 def GenerateMap(Map, MapSize):
   FileIn = open("MapData.txt", 'r')
@@ -452,11 +455,24 @@ def MoveWater(Map, MapSize, Pirate):
     Map[n[0]][n[1]] = WATER
   DisplayMap(Map, MapSize)
 
-def OpenInventory(Pirate):
-  print(f"Inventory: Number of coconuts: {Pirate.NumOfCoconuts}")
+def UseScanner(Map, MapSize ,HiddenMap, Pirate):
+  ShortestDistance = math.sqrt(MapSize.Rows^2+MapSize.Columns^2)
+  Row = 0
+  for Row in range(MapSize.Rows):
+    Column = 0
+    for Column in range(MapSize.Columns):
+      if HiddenMap[Row][Column] in [TREASURE, GOLD_COIN]:
+        if math.sqrt((Pirate.Row-Row)^2+(Pirate.Column-Column)^2) < ShortestDistance:
+          ShortestDistance = math.sqrt((Pirate.Row-Row)^2+(Pirate.Column-Column)^2)
+  Pirate.NumOfScannerUsesLeft -= 1
+  print(f"\033[32mThe metal detector found something {round(ShortestDistance)} tiles way\033[0m")
+  print(f"The pirate has got {Pirate.NumOfScannerUsesLeft} scans of metal detector left")
+
+def OpenInventory(Map, MapSize ,HiddenMap, Pirate):
+  print(f"Inventory: Number of coconuts: {Pirate.NumOfCoconuts}, Number of scans with metal detector left: {Pirate.NumOfScannerUsesLeft}")
   Answer = BLANK
-  while not (Answer in ["C", "Q"]): 
-    Answer = input("Press to eat a coconut (C), to drop a coconut(D), to close inventory (Q): ")
+  while not (Answer in ["C","D","S","Q"]): 
+    Answer = input("Press to eat a coconut (C), to drop a coconut (D), to use metal detector (S), to close inventory (Q): ")
     match(Answer):
       case "C":
         if Pirate.NumOfCoconuts != 0:
@@ -489,6 +505,8 @@ def OpenInventory(Pirate):
           print("You haven't found any coconuts!")
           Answer = BLANK
           continue
+      case "S":
+        UseScanner(Map, MapSize ,HiddenMap, Pirate)
       case _:
         continue
   
@@ -509,7 +527,7 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
           print(f"The pirate has already used dynamite!")
           return Answer
       case "I":
-        OpenInventory(Pirate)
+        OpenInventory(Map, MapSize ,HiddenMap, Pirate)
       case _:
         pass
     Pirate.NumOfActions += 1
