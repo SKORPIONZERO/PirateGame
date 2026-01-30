@@ -456,16 +456,19 @@ def MoveWater(Map, MapSize, Pirate):
   DisplayMap(Map, MapSize)
 
 def UseScanner(Map, MapSize ,HiddenMap, Pirate):
-  ShortestDistance = math.sqrt(MapSize.Rows^2+MapSize.Columns^2)
+  ShortestDistance = math.sqrt(MapSize.Rows**2+MapSize.Columns**2)
   Row = 0
   for Row in range(MapSize.Rows):
     Column = 0
     for Column in range(MapSize.Columns):
       if HiddenMap[Row][Column] in [TREASURE, GOLD_COIN]:
-        if math.sqrt((Pirate.Row-Row)^2+(Pirate.Column-Column)^2) < ShortestDistance:
-          ShortestDistance = math.sqrt((Pirate.Row-Row)^2+(Pirate.Column-Column)^2)
+        if math.sqrt((Pirate.Row-Row)**2+(Pirate.Column-Column)**2) < ShortestDistance:
+          ShortestDistance = math.sqrt((Pirate.Row-Row)**2+(Pirate.Column-Column)**2)
   Pirate.NumOfScannerUsesLeft -= 1
-  print(f"\033[32mThe metal detector found something {round(ShortestDistance)} tiles way\033[0m")
+  if ShortestDistance != 0:
+    print(f"\033[32mThe metal detector found something {round(ShortestDistance)} tiles way!\033[0m")
+  else:
+    print(f"\033[32mThe metal detector found something right below your feet!\033[0m")
   print(f"The pirate has got {Pirate.NumOfScannerUsesLeft} scans of metal detector left")
 
 def OpenInventory(Map, MapSize ,HiddenMap, Pirate):
