@@ -4,6 +4,7 @@
 # written by the AQA Programmer Team
 # developed in a Python 3 environment
 # Use pip install colorama
+import MapGenerator
 import random
 import time
 import math
@@ -70,8 +71,12 @@ def ResetPirateRecord(Pirate):
   Pirate.UsedDynamite = False
   Pirate.Drown = False
 
-def GenerateMap(Map, MapSize):
-  FileIn = open("MapDataMain.txt", 'r')
+def GenerateMap(Map, MapSize, mainMap, difficulty = None):
+  if mainMap:
+    FileIn = open("MapDataMain.txt", 'r')
+  else:
+    MapGenerator.generateRoundMap(difficulty)
+    FileIn = open("MapDataGenerated.txt", 'r')
   DataString = FileIn.readline()
   Data = DataString.split(',')
   MapSize.Rows = int(Data[0])
@@ -90,8 +95,11 @@ def ProcessDataInputString(Map, DataString):
   Column = int(Data[2])
   Map[Row][Column] = Item
 
-def GenerateHiddenMap(HiddenMap):
-  FileIn = open("HiddenDataMain.txt", 'r')
+def GenerateHiddenMap(HiddenMap, mainMap):
+  if mainMap:
+    FileIn = open("HiddenDataMain.txt", 'r')
+  else:
+    FileIn = open("HiddenDataGenerated.txt", 'r')
   DataString = FileIn.readline()
   while DataString != "":
     ProcessDataInputString(HiddenMap, DataString)
@@ -594,8 +602,17 @@ def TreasureIsland():
   Pirate = PirateRecord()
   MapSize = ResetMapSize(MapSize)
   ResetMaps(Map, HiddenMap)
-  MapSize = GenerateMap(Map, MapSize)
-  GenerateHiddenMap(HiddenMap)
+  mainMap = input("Type yes if you want to use the main map or no if you want a generated map: ").lower()
+  if mainMap == "no":
+    mainMap = False
+  else:
+    mainMap = True
+  if mainMap:
+    MapSize = GenerateMap(Map, MapSize, mainMap)
+  else:
+    difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
+    MapSize = GenerateMap(Map, MapSize, mainMap, difficulty)
+  GenerateHiddenMap(HiddenMap, mainMap)
   ResetPirateRecord(Pirate)
   FindLandingPlace(Map, MapSize, Pirate)
   Answer = BLANK
