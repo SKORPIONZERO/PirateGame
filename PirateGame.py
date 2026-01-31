@@ -8,6 +8,8 @@ import MapGenerator
 import random
 import time
 import math
+import os
+import atexit
 
 SAND = '.'
 WATER = 'W'
@@ -622,9 +624,22 @@ def TreasureIsland():
   DisplayResults(Pirate)
   DisplayMissing(MapSize, HiddenMap)
 
+def cleanup():
+  if os.path.exists("HiddenDataGenerated.txt"):
+    os.remove("HiddenDataGenerated.txt")
+    print(f"Successfully deleted {"HiddenDataGenerated.txt"}")
+  if os.path.exists("HiddenMapGenerated.txt"):
+    os.remove("HiddenMapGenerated.txt")
+    print(f"Successfully deleted {"HiddenMapGenerated.txt"}")
+  if os.path.exists("MapDataGenerated.txt"):
+    os.remove("MapDataGenerated.txt")
+    print(f"Successfully deleted {"MapDataGenerated.txt"}")
+  atexit.register(cleanup)
+
 if __name__ == "__main__":
   Map = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   HiddenMap = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   TreasureIsland()
   ResetMaps(Map, HiddenMap)
+  cleanup()
   input("\nPress Enter to finish")

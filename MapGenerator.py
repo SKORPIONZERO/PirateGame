@@ -13,14 +13,15 @@ def CheckTilesMain(Map, object):
             if Map[row][column] == ".":
                 for i in [-1, 0, 1]:
                     for j in [-1, 0, 1]:
-                        if Map[row+i][column+j] == "B":
-                                nearB = True
-                        if Map[row+i][column+j] == "H":
-                                nearH = True
-                        if Map[row+i][column+j] == "W":
-                            if i == 0 or j == 0:
-                                nearWaterClose = True
-                            nearWaterWithDiagonals = True
+                        if (row+i >= 0 and row+i < len(Map)) and (column+j >= 0 and column+j < len(Map[row])):
+                            if Map[row+i][column+j] == "B":
+                                    nearB = True
+                            if Map[row+i][column+j] == "H":
+                                    nearH = True
+                            if Map[row+i][column+j] == "W":
+                                if i == 0 or j == 0:
+                                    nearWaterClose = True
+                                nearWaterWithDiagonals = True
                 if object not in ["X", "B"]:
                     if not nearWaterWithDiagonals and not nearB:
                         if object == "H" and not nearH: 
@@ -52,8 +53,9 @@ def placeRandomlyMain(Map, object, amount):
                     foundB = False
                     for i in [-1, 0, 1]:
                         for j in [-1, 0, 1]:
-                            if Map[k[0]+i][k[1]+j] == "B":
-                                foundB = True
+                            if (k[0]+i >= 0 and k[0]+i < len(Map)) and (k[1]+j >= 0 and k[1]+j < len(Map[0])):
+                                if Map[k[0]+i][k[1]+j] == "B":
+                                    foundB = True
                     if not foundB:
                         TilesToRemove.append(k)
                 for d in TilesToRemove:
@@ -92,12 +94,12 @@ def generateRoundMap(difficulty = "low", width = 42, height = 20):
     for b in Map:
         print("".join(b))
     print(f"\033[{height}A", end="\r")
-    centre_x, centre_y = (width // 2) - 0.5, (height // 2) - 0.5
-    max_radius_x, max_radius_y = (width // 2) - 1, (height // 2) - 1
+    centre_x, centre_y = (width // 2) - random.uniform(0,1), (height // 2) - random.uniform(0,1)
+    max_radius_x, max_radius_y = (width // 2) - random.uniform(1,2), (height // 2) - random.uniform(1,2)
     for y in range(height):
         for x in range(width):
             distanceFromCentre = ((x-centre_x)**2/max_radius_x**2)+((y-centre_y)**2/max_radius_y**2)
-            if distanceFromCentre < random.uniform(0.95,1.0):
+            if distanceFromCentre < random.uniform(0.9,1.0):
                 Map[y,x] = "."
                 print(f"{"".join(Map[y])}", end="\r")
                 time.sleep(0.001)
