@@ -7,9 +7,6 @@
 import random
 import time
 import math
-from colorama import init
-
-init()
 
 SAND = '.'
 WATER = 'W'
@@ -74,7 +71,7 @@ def ResetPirateRecord(Pirate):
   Pirate.Drown = False
 
 def GenerateMap(Map, MapSize):
-  FileIn = open("MapData.txt", 'r')
+  FileIn = open("MapDataMain.txt", 'r')
   DataString = FileIn.readline()
   Data = DataString.split(',')
   MapSize.Rows = int(Data[0])
@@ -94,7 +91,7 @@ def ProcessDataInputString(Map, DataString):
   Map[Row][Column] = Item
 
 def GenerateHiddenMap(HiddenMap):
-  FileIn = open("HiddenData.txt", 'r')
+  FileIn = open("HiddenDataMain.txt", 'r')
   DataString = FileIn.readline()
   while DataString != "":
     ProcessDataInputString(HiddenMap, DataString)
