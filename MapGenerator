@@ -1,0 +1,117 @@
+import numpy
+import random
+import time
+
+def CheckTiles(Map, object):
+    availableTiles = []
+    for row in range(len(Map)):
+        for column in range(len(Map[row])):
+            nearWaterWithDiagonals = False
+            nearWaterClose = False
+            nearB = False
+            if Map[row][column] == ".":
+                for i in [-1, 0, 1]:
+                    for j in [-1, 0, 1]:
+                        if Map[row+i][column+j] == "B":
+                                nearB = True
+                        if Map[row+i][column+j] == "W":
+                            if i == 0 or j == 0:
+                                nearWaterClose = True
+                            nearWaterWithDiagonals = True
+                if object not in ["X", "B"]:
+                    if not nearWaterWithDiagonals and not nearB:
+                        availableTiles.append([row, column])
+                else:
+                    if object == "X":
+                        if nearWaterClose and not nearB:
+                            availableTiles.append([row, column])
+                    else:
+                        if nearWaterClose:
+                            availableTiles.append([row, column])
+    return availableTiles
+
+def placeRandomly(Map, object, amount):
+    for n in range(amount):
+        availableTiles = CheckTiles(Map, object)
+        if object != "B":
+            chosenTile = random.choice(availableTiles)
+            Map[chosenTile[0]][chosenTile[1]] = object
+            print(f"\033[{len(Map)-chosenTile[0]}A", end="\r")
+            print(f"{"".join(Map[chosenTile[0]])}")
+            print(f"\033[{len(Map)-chosenTile[0]}B", end="\r")
+            time.sleep(0.01)
+        else:
+            if n == 0:
+                chosenTile = random.choice(availableTiles)
+                Map[chosenTile[0]][chosenTile[1]] = object
+                print(f"\033[{len(Map)-chosenTile[0]}A", end="\r")
+                print(f"{"".join(Map[chosenTile[0]])}")
+                print(f"\033[{len(Map)-chosenTile[0]}B", end="\r")
+                time.sleep(0.01)
+            else:
+                TilesToRemove = []
+                for k in availableTiles:
+                    foundB = False
+                    for i in [-1, 0, 1]:
+                        for j in [-1, 0, 1]:
+                            if Map[k[0]+i][k[1]+j] == "B":
+                                foundB = True
+                    if not foundB:
+                        TilesToRemove.append(k)
+                for d in TilesToRemove:
+                    availableTiles.remove(d)
+                chosenTile = random.choice(availableTiles)
+                Map[chosenTile[0]][chosenTile[1]] = object
+                print(f"\033[{len(Map)-chosenTile[0]}A", end="\r")
+                print(f"{"".join(Map[chosenTile[0]])}")
+                print(f"\033[{len(Map)-chosenTile[0]}B", end="\r")
+                time.sleep(0.05)
+
+def generateRoundMap(width = 42, height = 20, difficulty = "low"):
+    file = open("Map.txt", "w")
+    Map = numpy.full((height, width), "W", dtype=str)
+    for b in Map:
+        print("".join(b))
+    print(f"\033[{height}A", end="\r")
+    centre_x, centre_y = (width // 2) - 0.5, (height // 2) - 0.5
+    max_radius_x, max_radius_y = (width // 2) - 1, (height // 2) - 1
+    for y in range(height):
+        for x in range(width):
+            distanceFromCentre = ((x-centre_x)**2/max_radius_x**2)+((y-centre_y)**2/max_radius_y**2)
+            if distanceFromCentre < random.uniform(0.95,1.0):
+                Map[y,x] = "."
+                print(f"{"".join(Map[y])}", end="\r")
+                time.sleep(0.001)
+        print()
+    for row in range(height):
+        for column in range(width):
+            NumOfSandsAround = 0
+            if Map[row][column] == "W":
+                for i in [-1, 0, 1]:
+                    for j in [-1, 0, 1]:
+                        if (row+i >= 0 and row+i < height) and (column+j >= 0 and column+j < width):
+                            if Map[row+i][column+j] == ".":
+                                NumOfSandsAround += 1
+            if NumOfSandsAround >= 5:
+                Map[row][column] = "."
+                print(f"\033[{len(Map)-row}A", end="\r")
+                print(f"{"".join(Map[row])}")
+                print(f"\033[{len(Map)-row}B", end="\r")
+                time.sleep(0.05)
+    match(difficulty):
+        case "low":
+            placeRandomly(Map , "B", 20)
+            placeRandomly(Map , "X", 1)
+            placeRandomly(Map , "*", 8)
+            placeRandomly(Map , "H", 1)
+            placeRandomly(Map , "R", 1)
+    print()
+    file.write(f"{height}, {width}"+"\n")
+    for n in range(len(Map)):
+        if n == len(Map)-1:
+            file.write("".join(Map[n]))
+        else:
+            file.write("".join(Map[n])+"\n")
+        print("".join(Map[n]))
+    file.close()
+generateRoundMap()
