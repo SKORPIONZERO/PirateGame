@@ -24,6 +24,11 @@ BLANK = " "
 PRESSED_ENTER = ""
 MAX_ROWS = 20
 MAX_COLUMNS = 50
+ACTIONS_FOR_TREASURE_TO_MOVE = 8
+ACTIONS_FOR_WATER_TO_RISE = 10
+DIG_TIME_INCREMENTATION = 1.75
+START_SCORE = 300
+MAX_SCANNER_USES = 5
 
 # Map size used in logic
 class MapSizeRecord:
@@ -36,13 +41,13 @@ class PirateRecord:
   def __init__(self):
     self.Row = 0
     self.Column = 0
-    self.Score = 300
+    self.Score = START_SCORE
     self.DigTime = 0.0
     self.NumOfDigs = 0
     self.NumOfActions = 0
     self.NumOfCoconuts = 0
     self.NumberOfCoinsFound = 0
-    self.NumOfScannerUsesLeft = 5
+    self.NumOfScannerUsesLeft = MAX_SCANNER_USES
     self.TreasureFound = False
     self.UsedDynamite = False
     self.Drown = False
@@ -59,34 +64,25 @@ def ResetMaps(Map, HiddenMap):
     for Column in range (MAX_COLUMNS):
       Map[Row][Column] = SAND
       HiddenMap[Row][Column] = SAND
+  return Map, HiddenMap
 
 def ResetPirateRecord(Pirate):
   '''Resets pirate stats'''
   Pirate.Row = 0
   Pirate.Column = 0
-  Pirate.Score = 300
+  Pirate.Score = START_SCORE
   Pirate.DigTime = 0.0
-  Pirate.NumofDigs = 0
+  Pirate.NumOfDigs = 0
   Pirate.NumOfActions = 0
   Pirate.NumOfCoconuts = 0
   Pirate.NumberOfCoinsFound = 0
-  Pirate.NumOfScannerUsesLeft = 5
+  Pirate.NumOfScannerUsesLeft = MAX_SCANNER_USES
   Pirate.TreasureFound = False
   Pirate.UsedDynamite = False
   Pirate.Drown = False
+  return Pirate
 
-def GenerateMap(Map, MapSize, mainMap, difficulty = None):
-  '''Generates map, either random out of 2 choices (Round or Bumpy) or the main one'''
-  if mainMap:
-    FileIn = open("MapDataMain.txt", 'r')
-  else:
-    choice = random.randint(1,2)
-    match(choice):
-      case 1:
-        MapGenerator.generateRoundMap(difficulty)
-      case 2:
-        MapGenerator.generateRandomMap(difficulty)
-    FileIn = open("MapDataGenerated.txt", 'r')
+def ProcessMap(Map, MapSize, FileIn):
   DataString = FileIn.readline()
   Data = DataString.split(',')
   MapSize.Rows = int(Data[0])
@@ -95,7 +91,21 @@ def GenerateMap(Map, MapSize, mainMap, difficulty = None):
     DataString = FileIn.readline()
     for Column in range(MapSize.Columns):
       Map[Row][Column] = DataString[Column]
-  FileIn.close()
+  
+def GenerateMap(Map, MapSize, mainMap, difficulty = None):
+  '''Generates map, either random out of 2 choices (Round or Bumpy) or the main one'''
+  if mainMap:
+    with open("MapDataMain.txt", 'r') as FileIn:
+      ProcessMap(Map, MapSize, FileIn)
+  else:
+    choice = random.randint(1,2)
+    match(choice):
+      case 1:
+        MapGenerator.generateRoundMap(difficulty)
+      case 2:
+        MapGenerator.generateRandomMap(difficulty)
+    with open("MapDataGenerated.txt", 'r') as FileIn:
+      ProcessMap(Map, MapSize, FileIn)
   return MapSize
 
 def ProcessDataInputString(Map, DataString):
@@ -106,17 +116,20 @@ def ProcessDataInputString(Map, DataString):
   Column = int(Data[2])
   Map[Row][Column] = Item
 
-def GenerateHiddenMap(HiddenMap, mainMap):
-  '''Generates hidden map, either random one connected to main randomly generated map, or the main one'''
-  if mainMap:
-    FileIn = open("HiddenDataMain.txt", 'r')
-  else:
-    FileIn = open("HiddenDataGenerated.txt", 'r')
+def ProcessHiddenMap(HiddenMap, FileIn):
   DataString = FileIn.readline()
   while DataString != "":
     ProcessDataInputString(HiddenMap, DataString)
     DataString = FileIn.readline()
-  FileIn.close()
+
+def GenerateHiddenMap(HiddenMap, mainMap):
+  '''Generates hidden map, either random one connected to main randomly generated map, or the main one'''
+  if mainMap:
+    with open("HiddenDataMain.txt", 'r') as FileIn:
+      ProcessHiddenMap(HiddenMap, FileIn)
+  else:
+    with open("HiddenDataGenerated.txt", 'r') as FileIn:
+      ProcessHiddenMap(HiddenMap, FileIn)
 
 def DisplayCompass(Row):
   '''Displays the compass with the map'''
@@ -321,8 +334,9 @@ def PirateWalks(Map, MapSize, Pirate):
     Column = Pirate.Column
     for i in [-1, 0, 1]:
       for j in [-1, 0, 1]:
-        if Map[Pirate.Row+i][Pirate.Column+j] == SAND:
-          SurroundedByObstacles = False
+        if 0 < Row <= MapSize.Rows and 0 < Column <= MapSize.Columns:
+          if Map[Pirate.Row+i][Pirate.Column+j] == SAND:
+            SurroundedByObstacles = False
     ValidDistance, NumberOfSquares = CheckDistance(Distance)
     if SurroundedByObstacles:
       O_not_obstacle = True
@@ -402,8 +416,8 @@ def PirateDigs(Map, MapSize, HiddenMap, Pirate):
   if RandomValue in [0,1]:
     OpenMapPart(Map, MapSize, HiddenMap)
   if HiddenMap[Pirate.Row][Pirate.Column] not in [SAND, DUG_HOLE]:
-    HiddenMap[Pirate.Row][Pirate.Column] == SAND
     DisplayFind(Pirate, HiddenMap[Pirate.Row][Pirate.Column])
+    HiddenMap[Pirate.Row][Pirate.Column] = SAND
   else:
     if HiddenMap[Pirate.Row][Pirate.Column] == DUG_HOLE:
       print("You've already dug here!")
@@ -415,7 +429,7 @@ def PirateDigs(Map, MapSize, HiddenMap, Pirate):
     Pirate.Score -= 10
   HiddenMap[Pirate.Row][Pirate.Column] = DUG_HOLE
   Map[Pirate.Row][Pirate.Column] = DUG_HOLE
-  Pirate.DigTime += 1.75
+  Pirate.DigTime += DIG_TIME_INCREMENTATION
   Pirate.NumOfDigs += 1
   DisplayResults(Pirate)
 
@@ -433,7 +447,7 @@ def PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate):
           DisplayFind(Pirate, HiddenMap[Pirate.Row+i][Pirate.Column+j])
           HiddenMap[Pirate.Row+i][Pirate.Column+j] = SAND
         else:
-          print(f"Noting found at {Pirate.Row+i},{Pirate.Column+j}")
+          print(f"Nothing found at {Pirate.Row+i},{Pirate.Column+j}")
       if not (i == 0 and j == 0):
         HiddenMap[Pirate.Row+i][Pirate.Column+j] = DUG_HOLE
         Map[Pirate.Row+i][Pirate.Column+j] = DUG_HOLE
@@ -471,10 +485,8 @@ def MoveTreasure(Map, MapSize, HiddenMap):
 def MoveWater(Map, MapSize, Pirate):
   '''Water level rising every 10 actions'''
   TilesTurnToWater = []
-  Row = 0
-  while Row < MapSize.Rows:
-    Column = 0
-    while Column < MapSize.Columns:
+  for Row in range(MapSize.Rows):
+    for Column in range(MapSize.Columns):
       if Map[Row][Column] == WATER:
         for i in [-1, 0, 1]:
           for j in [-1, 0, 1]:
@@ -482,8 +494,6 @@ def MoveWater(Map, MapSize, Pirate):
               if Row+i == Pirate.Row and Column+j == Pirate.Column:
                 Pirate.Drown = True
               TilesTurnToWater.append([Row+i,Column+j])
-      Column += 1
-    Row += 1
   for n in TilesTurnToWater:
     Map[n[0]][n[1]] = WATER
   DisplayMap(Map, MapSize)
@@ -572,10 +582,10 @@ def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     Pirate.NumOfActions += 1
     if TreasureDestroyed:
       return PRESSED_ENTER
-    if Pirate.NumOfActions % 8 == 0 and Pirate.NumOfActions > 0:
+    if Pirate.NumOfActions % ACTIONS_FOR_TREASURE_TO_MOVE == 0 and Pirate.NumOfActions > 0:
       MoveTreasure(Map, MapSize, HiddenMap)
       print("The tresure has moved!")
-    if Pirate.NumOfActions % 10 == 0 and Pirate.NumOfActions > 0:
+    if Pirate.NumOfActions % ACTIONS_FOR_WATER_TO_RISE == 0 and Pirate.NumOfActions > 0:
       MoveWater(Map, MapSize, Pirate)
       print("The water level is rising!")
       if Pirate.Drown:
@@ -592,14 +602,12 @@ def DisplayResults(Pirate):
 
 def DisplayMissing(MapSize, HiddenMap):
   '''Outputs what the pirate missed at the end of the game'''
-  Row = 0
   MissingCoconuts = 0
   MissingCoins = 0
   MissingTreasure = False
   FinalStatement = ""
-  while Row < MapSize.Rows:
-    Column = 0
-    while Column < MapSize.Columns:
+  for Row in range(MapSize.Rows):
+    for Column in range(MapSize.Columns):
       if HiddenMap[Row][Column] != SAND:
         if HiddenMap[Row][Column] == COCONUT:
           MissingCoconuts += 1
@@ -607,8 +615,6 @@ def DisplayMissing(MapSize, HiddenMap):
           MissingCoins += 1
         if HiddenMap[Row][Column] == TREASURE:
           MissingTreasure = True
-      Column += 1
-    Row += 1
   if MissingCoconuts != 0:
     FinalStatement += f"{MissingCoconuts} coconuts"
   if len(FinalStatement) != 0:
@@ -632,10 +638,12 @@ def DisplayMissing(MapSize, HiddenMap):
 
 def TreasureIsland():
   '''Main function of the game: setup and main cycle of actions until ENTER is pressed'''
+  Map = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
+  HiddenMap = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   MapSize = MapSizeRecord()
   Pirate = PirateRecord()
   MapSize = ResetMapSize(MapSize)
-  ResetMaps(Map, HiddenMap)
+  Map, HiddenMap = ResetMaps(Map, HiddenMap)
   mainMap = input("Type yes if you want to use the main map or no if you want a generated map: ").lower()
   if mainMap == "no":
     mainMap = False
@@ -647,7 +655,7 @@ def TreasureIsland():
     difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
     MapSize = GenerateMap(Map, MapSize, mainMap, difficulty)
   GenerateHiddenMap(HiddenMap, mainMap)
-  ResetPirateRecord(Pirate)
+  Pirate = ResetPirateRecord(Pirate)
   FindLandingPlace(Map, MapSize, Pirate)
   Answer = BLANK
   while Answer != PRESSED_ENTER and Pirate.Score >= 0 and not Pirate.TreasureFound:
@@ -655,6 +663,8 @@ def TreasureIsland():
   print(f"\nFinal results:")
   DisplayResults(Pirate)
   DisplayMissing(MapSize, HiddenMap)
+  Map, HiddenMap = ResetMaps(Map, HiddenMap)
+  atexit.register(cleanup)
   print()
 
 def cleanup():
@@ -662,13 +672,8 @@ def cleanup():
   for file_path in Path(".").glob("*Generated.txt"):
         file_path.unlink()
         print(f"Deleted: {file_path}")
-  atexit.register(cleanup)
 
 if __name__ == "__main__":
   '''Start position of the program'''
-  Map = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
-  HiddenMap = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   TreasureIsland()
-  ResetMaps(Map, HiddenMap)
-  cleanup()
   input("\nPress Enter to finish")
