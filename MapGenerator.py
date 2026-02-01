@@ -1,8 +1,11 @@
+#imported libraries
 import numpy
+import math
 import random
 import time
 
 def CheckTilesMain(Map, object):
+    '''Checks and logs all the available tiles to place a certain object on the map'''
     availableTiles = []
     for row in range(len(Map)):
         for column in range(len(Map[row])):
@@ -38,6 +41,7 @@ def CheckTilesMain(Map, object):
     return availableTiles
 
 def placeRandomlyMain(Map, object, amount):
+    '''Places objects randomly on the map in the available tiles'''
     for n in range(amount):
         availableTiles = CheckTilesMain(Map, object)
         if object != "B":
@@ -68,6 +72,7 @@ def placeRandomlyMain(Map, object, amount):
         time.sleep(0.05)        
 
 def placeObjects(Map, difficulty):
+    '''Places certain number of objects depending on the difficulty of the game'''
     match(difficulty):
         case "low":
             placeRandomlyMain(Map , "B", 20)
@@ -89,6 +94,7 @@ def placeObjects(Map, difficulty):
             placeRandomlyMain(Map , "R", 10)
     
 def generateRoundMap(difficulty = "low", width = 42, height = 20):
+    '''Main cycle that generates round-like map, fills it with objects and generates a hidden map'''
     file = open("MapDataGenerated.txt", "w")
     Map = numpy.full((height, width), "W", dtype=str)
     for b in Map:
@@ -130,7 +136,63 @@ def generateRoundMap(difficulty = "low", width = 42, height = 20):
     generateHiddenMapData(Map, width, height, difficulty)
     file.close()
 
+def generateRandomMap(difficulty = "low", width = 42, height = 20):
+    '''Main cycle that generates random map with bumps, fills it with objects and generates a hidden map'''
+    file = open("MapDataGenerated.txt", "w")
+    Map = []
+    center_y, center_x = (height - 1) / 2, (width - 1) / 2
+    numOfPoints = 360
+    angles = []
+    currentR = 0.5
+    for i in range(numOfPoints):
+        currentR += random.uniform(-0.04, 0.04)
+        currentR = max(0.30, min(0.45, currentR))
+        angles.append(currentR)
+    for y in range(height):
+        row_str = ""
+        for x in range(width):
+            dy, dx = (y - center_y), (x - center_x)
+            angle_rad = math.atan2(dy, dx)
+            angle_deg = int(math.degrees(angle_rad)) % 360
+            dynamic_radius = angles[angle_deg]
+            dist_y = dy / (height * dynamic_radius)
+            dist_x = dx / (width * dynamic_radius)
+            if (dist_x**2 + dist_y**2) < 1:
+                row_str += "."
+            else:
+                row_str += "W"
+            print(row_str, end="\r")
+            time.sleep(0.005)
+        Map.append(list(row_str))
+        print()
+    for row in range(height):
+        for column in range(width):
+            NumOfSandsAround = 0
+            if Map[row][column] == "W":
+                for i in [-1, 0, 1]:
+                    for j in [-1, 0, 1]:
+                        if (row+i >= 0 and row+i < height) and (column+j >= 0 and column+j < width):
+                            if Map[row+i][column+j] == ".":
+                                NumOfSandsAround += 1
+            if NumOfSandsAround >= 5:
+                Map[row][column] = "."
+                print(f"\033[{len(Map)-row}A", end="\r")
+                print(f"{"".join(Map[row])}")
+                print(f"\033[{len(Map)-row}B", end="\r")
+                time.sleep(0.05)
+    placeObjects(Map, difficulty)
+    print()
+    file.write(f"{height}, {width}"+"\n")
+    for n in range(len(Map)):
+        if n == len(Map)-1:
+            file.write("".join(Map[n]))
+        else:
+            file.write("".join(Map[n])+"\n")
+    generateHiddenMapData(Map, width, height, difficulty)
+    file.close()
+
 def PlaceHidden(Map, HiddenMap, difficulty):
+    '''Places a certain amount of objects on the hidden map depending on the difficulty'''
     match(difficulty):
         case "low":
             placeRandomlyHidden(Map, HiddenMap, "G", 12)
@@ -146,6 +208,7 @@ def PlaceHidden(Map, HiddenMap, difficulty):
             placeRandomlyHidden(Map, HiddenMap, "C", 9)
 
 def CheckTilesHidden(Map, HiddenMap, object, order):
+    '''Checks and logs the tiles for objects on the hidden map that are available'''
     availableTiles = []
     for row in range(len(Map)):
         for column in range(len(Map[row])):
@@ -166,12 +229,14 @@ def CheckTilesHidden(Map, HiddenMap, object, order):
     return availableTiles
 
 def placeRandomlyHidden(Map, HiddenMap, object, amount):
+    '''Places randomly objects on available tiles'''
     for n in range(amount):
         availableTiles = CheckTilesHidden(Map, HiddenMap, object, n)
         chosenTile = random.choice(availableTiles)
         HiddenMap[chosenTile[0]][chosenTile[1]] = object
 
 def generateHiddenMapData(Map, width, height, difficulty):
+    '''Generates hidden map and its information'''
     fileHidden = open("HiddenDataGenerated.txt", "w")
     fileHiddenMap = open("HiddenMapGenerated.txt", "w")
     HiddenMap = numpy.full((height, width), ".", dtype=str)
