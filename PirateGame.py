@@ -642,6 +642,7 @@ def TreasureIsland():
   HiddenMap = [[SAND for i in range(MAX_COLUMNS)] for j in range(MAX_ROWS)]
   MapSize = MapSizeRecord()
   Pirate = PirateRecord()
+  difficulty = ""
   MapSize = ResetMapSize(MapSize)
   Map, HiddenMap = ResetMaps(Map, HiddenMap)
   mainMap = input("Type yes if you want to use the main map or no if you want a generated map: ").lower()
@@ -652,7 +653,8 @@ def TreasureIsland():
   if mainMap:
     MapSize = GenerateMap(Map, MapSize, mainMap)
   else:
-    difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
+    while difficulty not in ["low", "mid", "high"]:
+      difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
     MapSize = GenerateMap(Map, MapSize, mainMap, difficulty)
   GenerateHiddenMap(HiddenMap, mainMap)
   Pirate = ResetPirateRecord(Pirate)
