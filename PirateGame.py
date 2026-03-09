@@ -666,6 +666,7 @@ def TreasureIsland():
   DisplayResults(Pirate)
   DisplayMissing(MapSize, HiddenMap)
   Map, HiddenMap = ResetMaps(Map, HiddenMap)
+  cleanup()
   atexit.register(cleanup)
   print()
 
