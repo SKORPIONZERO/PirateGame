@@ -1,4 +1,5 @@
 # The Pirate Game
+<p align="justify">
 In The Pirate Game, you play as a pirate searching for a legendary chest on a mysterious, changing island.
 You start by finding your landing spot, then move across the map to dig for gold and hidden items.
 The game is a race against time and nature: the treasure actually moves if you take too long, 
@@ -6,6 +7,7 @@ and the ocean water slowly rises to drown the land.
 To survive and win, you must manage your energy by eating coconuts, 
 use a metal detector to track down the chest, and decide when to use powerful dynamite.
 It’s a fun mix of exploration and strategy where you try to get the highest score before the island disappears!
+</p>
 
 # Features
 
