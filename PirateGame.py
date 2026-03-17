@@ -32,9 +32,9 @@ MAX_SCANNER_USES = 5
 
 # Map size used in logic
 class MapSizeRecord:
-  def __init__(self):
-    self.Rows = MAX_ROWS
-    self.Columns = MAX_COLUMNS
+    def __init__(self):
+        self.Rows = MAX_ROWS
+        self.Columns = MAX_COLUMNS
 
 # Main pirate class
 class PirateRecord:
@@ -321,36 +321,39 @@ def PirateWalks(Map, MapSize, Pirate):
   SurroundedByObstacles = True
   O_not_obstacle = False
   while ObstacleInPath or not ValidDistance or not ValidDirection:
-    WalkData = input("Enter length (1 to 20) and direction (N, NE, E, SE, S, SW, W, NW): ")
-    Distance = 0
-    Direction = BLANK
-    for k in range(len(WalkData)):
-      if WalkData[0:k+1].isdigit():
-        Distance = WalkData[0:k+1]
-    for n in range(len(WalkData)):
-      if WalkData[-1:-n-2:-1].isalpha():
-        Direction = WalkData[-n-1:]
-    Row = Pirate.Row
-    Column = Pirate.Column
-    for i in [-1, 0, 1]:
-      for j in [-1, 0, 1]:
-        if 0 < Row <= MapSize.Rows and 0 < Column <= MapSize.Columns:
-          if Map[Pirate.Row+i][Pirate.Column+j] == SAND:
-            SurroundedByObstacles = False
-    ValidDistance, NumberOfSquares = CheckDistance(Distance)
-    if SurroundedByObstacles:
-      O_not_obstacle = True
-      if Distance == "1":
-        ValidDistance = False
-        print("Need to get out of the entire hole!")
-    ValidDirection, Row, Column = CheckDirection(Direction, Row, Column, NumberOfSquares)
-    if Row >= MapSize.Rows or Column >= MapSize.Columns or Row < 0 or Column < 0:
-      ValidDirection = False
-      print("Error")
-    if ValidDirection:
-      ObstacleInPath = CheckPath(Map, Pirate.Row, Pirate.Column, Row, Column, Direction, O_not_obstacle)
-      if ObstacleInPath:
-        print("Pirate can't walk this way as there is an obstacle in the way")
+    try:
+      WalkData = input("Enter length (1 to 20) and direction (N, NE, E, SE, S, SW, W, NW): ")
+      Distance = 0
+      Direction = BLANK
+      for k in range(len(WalkData)):
+        if WalkData[0:k+1].isdigit():
+          Distance = WalkData[0:k+1]
+      for n in range(len(WalkData)):
+        if WalkData[-1:-n-2:-1].isalpha():
+          Direction = WalkData[-n-1:]
+      Row = Pirate.Row
+      Column = Pirate.Column
+      for i in [-1, 0, 1]:
+        for j in [-1, 0, 1]:
+          if 0 < Row <= MapSize.Rows and 0 < Column <= MapSize.Columns:
+            if Map[Pirate.Row+i][Pirate.Column+j] == SAND:
+              SurroundedByObstacles = False
+      ValidDistance, NumberOfSquares = CheckDistance(Distance)
+      if SurroundedByObstacles:
+        O_not_obstacle = True
+        if Distance == "1":
+          ValidDistance = False
+          print("Need to get out of the entire hole!")
+      ValidDirection, Row, Column = CheckDirection(Direction, Row, Column, NumberOfSquares)
+      if Row >= MapSize.Rows or Column >= MapSize.Columns or Row < 0 or Column < 0:
+        ValidDirection = False
+        print("Error")
+      if ValidDirection:
+        ObstacleInPath = CheckPath(Map, Pirate.Row, Pirate.Column, Row, Column, Direction, O_not_obstacle)
+        if ObstacleInPath:
+          print("Pirate can't walk this way as there is an obstacle in the way")
+    except:
+      print("Incorrect value")
   Move(Map, MapSize, Pirate, Row, Column, WalkData[0])
 
 def DisplayFind(Pirate, ItemFound):
@@ -463,7 +466,6 @@ def PirateUsesDynamite(Map, MapSize, HiddenMap, Pirate):
 
 def MoveTreasure(Map, MapSize, HiddenMap):
   '''Treasure is moved to a different location on the map every 8 actions'''
-  #Base treasure location should be located at 0s in case if pirate digs out the chest on the 8th action
   TreasureRow = 0
   TreasureColumn = 0
   AvailableTiles = []
@@ -519,51 +521,54 @@ def OpenInventory(Map, MapSize ,HiddenMap, Pirate):
   '''Opens inventory of the pirate'''
   print(f"Inventory: Number of coconuts: {Pirate.NumOfCoconuts}, Number of scans with metal detector left: {Pirate.NumOfScannerUsesLeft}")
   Answer = BLANK
-  while not (Answer in ["C","D","S","Q"]): 
-    Answer = input("Press to eat a coconut (C), to drop a coconut (D), to use metal detector (S), to close inventory (Q): ")
-    match(Answer):
-      case "C":
-        if Pirate.NumOfCoconuts != 0:
-          Pirate.NumOfCoconuts -= 1
-          Pirate.Score += 20
-          print(f"You ate a coconut and restored 20 score points")
-          print(f"The score is: {Pirate.Score}")
-          Answer = BLANK
-          continue
-        else:
-          print("You haven't found any coconuts!")
-          Answer = BLANK
-          continue
-      case "Q":
-        return
-      case "D":
-        CoconutDroppedSuccessfuly = False
-        if Pirate.NumOfCoconuts != 0:
-          Pirate.NumOfCoconuts -= 1
-          for row in [-1,1]:
-            for column in [-1, 1]:
-              if Map[Pirate.Row + row][Pirate.Column + column] == HUT:
-                print("\033[32mYou successfully saved a coconut next to the corner of the hut to relax after working!\033[0m")
-                print(f"The score is {Pirate.Score}")
-                CoconutDroppedSuccessfuly = True
-          if CoconutDroppedSuccessfuly == False:
-            print("\033[31mYou dropped a coconut in the incorrect spot and haven't got any benefits!\033[0m")
-            Map[Pirate.Row][Pirate.Column] = COCONUT
-        else:
-          print("You haven't found any coconuts!")
-          Answer = BLANK
-          continue
-      case "S":
-        UseScanner(MapSize ,HiddenMap, Pirate)
-      case _:
-        continue
+  while not (Answer in ["C","D","S","Q"]):
+    try:
+      Answer = input("Press to eat a coconut (C), to drop a coconut (D), to use metal detector (S), to close inventory (Q): ")
+    except:
+      print("Incorrect value")
+  match(Answer):
+    case "C":
+      if Pirate.NumOfCoconuts != 0:
+        Pirate.NumOfCoconuts -= 1
+        Pirate.Score += 20
+        print(f"You ate a coconut and restored 20 score points")
+        print(f"The score is: {Pirate.Score}")
+        Answer = BLANK
+      else:
+        print("You haven't found any coconuts!")
+        Answer = BLANK
+    case "Q":
+      return
+    case "D":
+      CoconutDroppedSuccessfuly = False
+      if Pirate.NumOfCoconuts != 0:
+        Pirate.NumOfCoconuts -= 1
+        for row in [-1,1]:
+          for column in [-1, 1]:
+            if Map[Pirate.Row + row][Pirate.Column + column] == HUT:
+              print("\033[32mYou successfully saved a coconut next to the corner of the hut to relax after working!\033[0m")
+              print(f"The score is {Pirate.Score}")
+              CoconutDroppedSuccessfuly = True
+        if CoconutDroppedSuccessfuly == False:
+          print("\033[31mYou dropped a coconut in the incorrect spot and haven't got any benefits!\033[0m")
+          Map[Pirate.Row][Pirate.Column] = COCONUT
+      else:
+        print("You haven't found any coconuts!")
+        Answer = BLANK
+    case "S":
+      UseScanner(MapSize ,HiddenMap, Pirate)
+    case _:
+      pass
   
 def GetPirateAction(Map, MapSize, HiddenMap, Pirate, Answer):
     '''Receives pirate actions and calls dedicated function to process it'''
     TreasureDestroyed = False
-    Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory (I), to finish game press Enter: ")
+    Answer = BLANK
     while not (Answer in ["W", "D", "B","I", PRESSED_ENTER]):
-      Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory (I), to finish game press Enter: ")
+      try:
+        Answer = input("Pirate to walk (W), dig (D), use dynamite (B) or open inventory (I), to finish game press Enter: ")
+      except:
+        print("Incorrect value")
     match(Answer):
       case "W":
         PirateWalks(Map, MapSize, Pirate)
@@ -645,7 +650,10 @@ def TreasureIsland():
   difficulty = ""
   MapSize = ResetMapSize(MapSize)
   Map, HiddenMap = ResetMaps(Map, HiddenMap)
-  mainMap = input("Type yes if you want to use the main map or no if you want a generated map: ").lower()
+  try:
+    mainMap = input("Type yes if you want to use the main map or no if you want a generated map: ").lower()
+  except:
+    mainMap = True
   if mainMap == "no":
     mainMap = False
   else:
@@ -654,7 +662,10 @@ def TreasureIsland():
     MapSize = GenerateMap(Map, MapSize, mainMap)
   else:
     while difficulty not in ["low", "mid", "high"]:
-      difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
+      try:
+        difficulty = input("Choose difficulty of the game to be \033[32mlow\033[0m, \033[33mmid\033[0m or \033[31mhigh\033[0m: ").lower()
+      except:
+        print("Incorrect value")
     MapSize = GenerateMap(Map, MapSize, mainMap, difficulty)
   GenerateHiddenMap(HiddenMap, mainMap)
   Pirate = ResetPirateRecord(Pirate)
@@ -678,5 +689,8 @@ def cleanup():
 
 if __name__ == "__main__":
   '''Start position of the program'''
-  TreasureIsland()
-  input("\nPress Enter to finish")
+  try:
+    TreasureIsland()
+    input("\nPress Enter to finish")
+  except:
+    pass
